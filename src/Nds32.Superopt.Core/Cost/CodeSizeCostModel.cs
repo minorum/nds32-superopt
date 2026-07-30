@@ -4,6 +4,9 @@ namespace Nds32.Superopt.Core.Cost;
 
 public sealed class CodeSizeCostModel : ISequenceCostModel
 {
-    public SequenceCost GetCost(InstructionSequence sequence) =>
-        new(sequence.EncodedSize, sequence.Instructions.Length);
+    public SequenceCost GetCost(InstructionSequence sequence)
+    {
+        ArgumentNullException.ThrowIfNull(sequence);
+        return new SequenceCost(sequence.EncodedSize, sequence.Instructions.Length);
+    }
 }
