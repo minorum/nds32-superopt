@@ -4,9 +4,22 @@ namespace Nds32.Superopt.Core.Search;
 
 public sealed class CandidateEnumerator
 {
-    private static readonly int[] ArithmeticImmediates = [-16, -1, 0, 1, 2, 15, 16, 31];
-    private static readonly int[] ConstantImmediates = [-16, -1, 0, 1, 15, 16, 31, 255];
+    private static readonly int[] ArithmeticImmediates = [-16, -1, 0, 1, 2, 8, 15, 16, 31];
+    private static readonly int[] ConstantImmediates   = [-16, -1, 0, 1, 15, 16, 31, 255];
+    private static readonly int[] MaskImmediates       = [0, 1, 3, 7, 0xFF, 0xFF00, 0xFFFF];
 
+    private static readonly Opcode[] RTypeOpcodes =
+    [
+        Opcode.Add, Opcode.Subtract, Opcode.And, Opcode.Or, Opcode.Xor,
+        Opcode.Nor, Opcode.Multiply, Opcode.SetLessThan, Opcode.SetLessThanUnsigned,
+        Opcode.Add45,
+    ];
+
+    /// <summary>
+    /// Enumerates all single-instruction candidates that could be cheaper than the
+    /// source sequence.  The empty sequence (complete removal) is included first to
+    /// allow elimination of architectural no-ops.
+    /// </summary>
     public IEnumerable<InstructionSequence> EnumerateSingleInstructionCandidates(
         Register destination,
         IReadOnlyCollection<Register> inputRegisters)
@@ -20,82 +33,73 @@ public sealed class CandidateEnumerator
 
         foreach (Register source in inputs)
         {
+            // ── Copy (16-bit) ─────────────────────────────────────────────────
             yield return new InstructionSequence(
             [
                 Instruction.Unary(Opcode.Move55, destination, source),
             ]);
 
+            // ── Immediate arithmetic ──────────────────────────────────────────
             foreach (int immediate in ArithmeticImmediates)
             {
-                Instruction addImmediate = Instruction.WithImmediate(
-                    Opcode.AddImmediate,
-                    destination,
-                    source,
-                    immediate);
+                foreach (var inst in TryBuild(Instruction.WithImmediate(Opcode.AddImmediate, destination, source, immediate)))
+                    yield return inst;
 
-                if (addImmediate.IsEncodingValid)
-                {
-                    yield return new InstructionSequence([addImmediate]);
-                }
-
-                Instruction addImmediate45 = Instruction.WithImmediate(
-                    Opcode.AddImmediate45,
-                    destination,
-                    source,
-                    immediate);
-
-                if (addImmediate45.IsEncodingValid)
-                {
-                    yield return new InstructionSequence([addImmediate45]);
-                }
+                foreach (var inst in TryBuild(Instruction.WithImmediate(Opcode.AddImmediate45, destination, source, immediate)))
+                    yield return inst;
             }
 
+            // ── Immediate bit ops ─────────────────────────────────────────────
+            foreach (int immediate in MaskImmediates)
+            {
+                foreach (var inst in TryBuild(Instruction.WithImmediate(Opcode.AndImmediate, destination, source, immediate)))
+                    yield return inst;
+
+                foreach (var inst in TryBuild(Instruction.WithImmediate(Opcode.OrImmediate, destination, source, immediate)))
+                    yield return inst;
+
+                foreach (var inst in TryBuild(Instruction.WithImmediate(Opcode.XorImmediate, destination, source, immediate)))
+                    yield return inst;
+            }
+
+            // ── Shifts ────────────────────────────────────────────────────────
+            for (int shift = 0; shift <= 31; shift++)
+            {
+                foreach (var inst in TryBuild(Instruction.WithImmediate(Opcode.ShiftLeft, destination, source, shift)))
+                    yield return inst;
+
+                foreach (var inst in TryBuild(Instruction.WithImmediate(Opcode.ShiftRightLogical, destination, source, shift)))
+                    yield return inst;
+
+                foreach (var inst in TryBuild(Instruction.WithImmediate(Opcode.ShiftRightArithmetic, destination, source, shift)))
+                    yield return inst;
+            }
+
+            // ── Register-register ─────────────────────────────────────────────
             foreach (Register secondSource in inputs)
             {
-                yield return Sequence(Opcode.Add, destination, source, secondSource);
-                yield return Sequence(Opcode.Subtract, destination, source, secondSource);
-                yield return Sequence(Opcode.And, destination, source, secondSource);
-                yield return Sequence(Opcode.Or, destination, source, secondSource);
-                yield return Sequence(Opcode.Xor, destination, source, secondSource);
-
-                Instruction add45 = Instruction.Binary(Opcode.Add45, destination, source, secondSource);
-                if (add45.IsEncodingValid)
+                foreach (var opcode in RTypeOpcodes)
                 {
-                    yield return new InstructionSequence([add45]);
+                    foreach (var inst in TryBuild(Instruction.Binary(opcode, destination, source, secondSource)))
+                        yield return inst;
                 }
             }
         }
 
+        // ── Load constant ─────────────────────────────────────────────────────
         foreach (int immediate in ConstantImmediates)
         {
-            Instruction movi = Instruction.WithImmediate(
-                Opcode.MoveImmediate,
-                destination,
-                default,
-                immediate);
+            foreach (var inst in TryBuild(Instruction.WithImmediate(Opcode.MoveImmediate, destination, default, immediate)))
+                yield return inst;
 
-            if (movi.IsEncodingValid)
-            {
-                yield return new InstructionSequence([movi]);
-            }
-
-            Instruction movi55 = Instruction.WithImmediate(
-                Opcode.MoveImmediate55,
-                destination,
-                default,
-                immediate);
-
-            if (movi55.IsEncodingValid)
-            {
-                yield return new InstructionSequence([movi55]);
-            }
+            foreach (var inst in TryBuild(Instruction.WithImmediate(Opcode.MoveImmediate55, destination, default, immediate)))
+                yield return inst;
         }
     }
 
-    private static InstructionSequence Sequence(
-        Opcode opcode,
-        Register destination,
-        Register source1,
-        Register source2) =>
-        new([Instruction.Binary(opcode, destination, source1, source2)]);
+    private static IEnumerable<InstructionSequence> TryBuild(Instruction inst)
+    {
+        if (inst.IsEncodingValid)
+            yield return new InstructionSequence([inst]);
+    }
 }
