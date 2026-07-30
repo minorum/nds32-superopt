@@ -2,14 +2,14 @@ using Nds32.Superopt.Isa.Architecture;
 
 namespace Nds32.Superopt.Tests;
 
-[TestFixture]
 public sealed class InstructionTests
 {
-    [TestCase(-16384, true)]
-    [TestCase(16383, true)]
-    [TestCase(-16385, false)]
-    [TestCase(16384, false)]
-    public void AddImmediate_UsesSignedFifteenBitRange(int immediate, bool expected)
+    [Test]
+    [Arguments(-16384, true)]
+    [Arguments(16383, true)]
+    [Arguments(-16385, false)]
+    [Arguments(16384, false)]
+    public async Task AddImmediate_UsesSignedFifteenBitRange(int immediate, bool expected)
     {
         Instruction instruction = Instruction.WithImmediate(
             Opcode.AddImmediate,
@@ -17,11 +17,11 @@ public sealed class InstructionTests
             new Register(1),
             immediate);
 
-        Assert.That(instruction.IsEncodingValid, Is.EqualTo(expected));
+        await Assert.That(instruction.IsEncodingValid).IsEqualTo(expected);
     }
 
     [Test]
-    public void AddImmediate45_RequiresTiedEncodableDestination()
+    public async Task AddImmediate45_RequiresTiedEncodableDestination()
     {
         Instruction valid = Instruction.WithImmediate(
             Opcode.AddImmediate45,
@@ -39,17 +39,17 @@ public sealed class InstructionTests
             new Register(12),
             31);
 
-        Assert.Multiple(() =>
+        using (Assert.Multiple())
         {
-            Assert.That(valid.IsEncodingValid, Is.True);
-            Assert.That(valid.EncodedSize, Is.EqualTo(2));
-            Assert.That(untied.IsEncodingValid, Is.False);
-            Assert.That(invalidRegister.IsEncodingValid, Is.False);
-        });
+            await Assert.That(valid.IsEncodingValid).IsTrue();
+            await Assert.That(valid.EncodedSize).IsEqualTo(2);
+            await Assert.That(untied.IsEncodingValid).IsFalse();
+            await Assert.That(invalidRegister.IsEncodingValid).IsFalse();
+        }
     }
 
     [Test]
-    public void Sequence_DerivesExternalInputsAcrossTemporaryDefinitions()
+    public async Task Sequence_DerivesExternalInputsAcrossTemporaryDefinitions()
     {
         var r1 = new Register(1);
         var r2 = new Register(2);
@@ -61,10 +61,40 @@ public sealed class InstructionTests
             Instruction.Binary(Opcode.Xor, r4, r3, r1),
         ]);
 
-        Assert.Multiple(() =>
+        Register[] reads = sequence.ReadRegisters.Enumerate().ToArray();
+        Register[] writes = sequence.WrittenRegisters.Enumerate().ToArray();
+
+        using (Assert.Multiple())
         {
-            Assert.That(sequence.ReadRegisters.Enumerate(), Is.EqualTo(new[] { r1, r2 }));
-            Assert.That(sequence.WrittenRegisters.Enumerate(), Is.EqualTo(new[] { r3, r4 }));
-        });
+            await Assert.That(reads.SequenceEqual([r1, r2])).IsTrue();
+            await Assert.That(writes.SequenceEqual([r3, r4])).IsTrue();
+        }
+    }
+
+    [Test]
+    [Arguments(Opcode.SetLessThan, "slts r3, r1, r2")]
+    [Arguments(Opcode.SetLessThanUnsigned, "slt r3, r1, r2")]
+    public async Task ComparisonMnemonics_MatchNds32Signedness(
+        Opcode opcode,
+        string expected)
+    {
+        Instruction instruction = Instruction.Binary(
+            opcode,
+            new Register(3),
+            new Register(1),
+            new Register(2));
+
+        await Assert.That(instruction.ToString()).IsEqualTo(expected);
+    }
+
+    [Test]
+    public async Task Factories_RejectOpcodeWithWrongOperandForm()
+    {
+        await Assert.That(() => Instruction.Binary(
+                Opcode.AddImmediate,
+                new Register(2),
+                new Register(1),
+                new Register(0)))
+            .Throws<ArgumentOutOfRangeException>();
     }
 }
