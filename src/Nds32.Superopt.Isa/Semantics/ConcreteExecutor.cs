@@ -9,6 +9,9 @@ public sealed class ConcreteExecutor
         InstructionSequence sequence,
         ConcreteMachineState initialState)
     {
+        ArgumentNullException.ThrowIfNull(sequence);
+        ArgumentNullException.ThrowIfNull(initialState);
+
         ConcreteMachineState state = initialState.Clone();
 
         foreach (Instruction instruction in sequence.Instructions)
@@ -26,33 +29,26 @@ public sealed class ConcreteExecutor
 
         state[instruction.Destination] = instruction.Opcode switch
         {
-            // ── R-type ────────────────────────────────────────────────────────
-            Opcode.Add      => unchecked(source1 + source2),
+            Opcode.Add => unchecked(source1 + source2),
             Opcode.Subtract => unchecked(source1 - source2),
-            Opcode.And      => source1 & source2,
-            Opcode.Or       => source1 | source2,
-            Opcode.Xor      => source1 ^ source2,
-            Opcode.Nor      => ~(source1 | source2),
+            Opcode.And => source1 & source2,
+            Opcode.Or => source1 | source2,
+            Opcode.Xor => source1 ^ source2,
             Opcode.Multiply => unchecked(source1 * source2),
-            Opcode.SetLessThan         => (int)source1 < (int)source2 ? 1u : 0u,
+            Opcode.SetLessThan => (int)source1 < (int)source2 ? 1u : 0u,
             Opcode.SetLessThanUnsigned => source1 < source2 ? 1u : 0u,
-
-            // ── I-type ────────────────────────────────────────────────────────
-            Opcode.AddImmediate  => unchecked(source1 + (uint)instruction.Immediate),
-            Opcode.OrImmediate   => source1 | (uint)instruction.Immediate,
-            Opcode.AndImmediate  => source1 & (uint)instruction.Immediate,
-            Opcode.XorImmediate  => source1 ^ (uint)instruction.Immediate,
-            Opcode.ShiftLeft             => source1 << instruction.Immediate,
-            Opcode.ShiftRightLogical     => source1 >> instruction.Immediate,
-            Opcode.ShiftRightArithmetic  => unchecked((uint)((int)source1 >> instruction.Immediate)),
-
-            // ── U-type / 16-bit ───────────────────────────────────────────────
-            Opcode.Move55          => source1,
-            Opcode.MoveImmediate   => unchecked((uint)instruction.Immediate),
+            Opcode.AddImmediate => unchecked(source1 + (uint)instruction.Immediate),
+            Opcode.OrImmediate => source1 | (uint)instruction.Immediate,
+            Opcode.AndImmediate => source1 & (uint)instruction.Immediate,
+            Opcode.XorImmediate => source1 ^ (uint)instruction.Immediate,
+            Opcode.ShiftLeft => source1 << instruction.Immediate,
+            Opcode.ShiftRightLogical => source1 >> instruction.Immediate,
+            Opcode.ShiftRightArithmetic => unchecked((uint)((int)source1 >> instruction.Immediate)),
+            Opcode.Move55 => source1,
+            Opcode.MoveImmediate => unchecked((uint)instruction.Immediate),
             Opcode.MoveImmediate55 => unchecked((uint)instruction.Immediate),
-            Opcode.Add45           => unchecked(source1 + source2),
-            Opcode.AddImmediate45  => unchecked(source1 + (uint)instruction.Immediate),
-
+            Opcode.Add45 => unchecked(source1 + source2),
+            Opcode.AddImmediate45 => unchecked(source1 + (uint)instruction.Immediate),
             _ => throw new UnreachableException($"Unsupported opcode: {instruction.Opcode}"),
         };
     }
