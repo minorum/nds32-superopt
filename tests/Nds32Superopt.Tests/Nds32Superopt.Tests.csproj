@@ -1,25 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="TUnit" />
   </ItemGroup>
-
   <ItemGroup>
-    <Using Include="Xunit" />
+    <ProjectReference Include="../../src/Nds32Superopt/Nds32Superopt.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Nds32Superopt\Nds32Superopt.csproj" />
-  </ItemGroup>
-
 </Project>
