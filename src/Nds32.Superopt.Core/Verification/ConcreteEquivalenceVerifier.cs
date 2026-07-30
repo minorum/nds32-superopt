@@ -39,6 +39,9 @@ public sealed class ConcreteEquivalenceVerifier : IEquivalenceVerifier
         InstructionSequence source,
         InstructionSequence candidate)
     {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(candidate);
+
         int caseIndex = 0;
 
         foreach (ConcreteMachineState state in GenerateEdgeCases())
