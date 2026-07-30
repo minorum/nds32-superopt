@@ -30,16 +30,17 @@ The first executable slice contains:
 - bounded single-instruction candidate enumeration;
 - a code-size-first candidate search;
 - a .NET 10 / C# 14 NativeAOT command-line application;
-- NUnit tests and GitHub Actions CI.
+- TUnit tests running on Microsoft.Testing.Platform;
+- GitHub Actions build, test, NativeAOT publish, and executable smoke checks.
 
 `ConcreteEquivalenceVerifier` is only a fast counterexample finder. A successful result is intentionally called `NoCounterexample`, **not a proof of equivalence**. Generated LLVM rewrites must eventually require `ProvenEquivalent` evidence from an SMT-backed verifier.
 
-## Build
+## Build and test
 
 ```bash
 dotnet restore Nds32.Superopt.slnx
 dotnet build Nds32.Superopt.slnx -c Release
-dotnet test Nds32.Superopt.slnx -c Release --no-build
+dotnet run --project tests/Nds32.Superopt.Tests -c Release --no-build
 ```
 
 ## Run the demonstration
@@ -48,17 +49,19 @@ dotnet test Nds32.Superopt.slnx -c Release --no-build
 dotnet run --project src/Nds32.Superopt.Cli -- demo
 ```
 
-It searches for a smaller candidate for:
+It searches for smaller candidates for several built-in instruction sequences, including:
 
 ```text
 addi r2, r1, 0
 ```
 
-and should discover:
+which should produce:
 
 ```text
 mov55 r2, r1
 ```
+
+Every result from the current concrete verifier is clearly reported as unproven.
 
 ## Publish NativeAOT
 
