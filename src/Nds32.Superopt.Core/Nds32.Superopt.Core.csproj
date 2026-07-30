@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Search, verification, cost models, and rewrite-rule generation.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Nds32.Superopt.Isa/Nds32.Superopt.Isa.csproj" />
+  </ItemGroup>
+</Project>

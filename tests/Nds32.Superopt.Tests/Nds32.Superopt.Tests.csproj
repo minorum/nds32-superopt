@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="TUnit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Nds32.Superopt.Core/Nds32.Superopt.Core.csproj" />
+    <ProjectReference Include="../../src/Nds32.Superopt.Isa/Nds32.Superopt.Isa.csproj" />
+  </ItemGroup>
+</Project>
