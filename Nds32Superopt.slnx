@@ -1,8 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/Nds32Superopt/Nds32Superopt.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/Nds32Superopt.Tests/Nds32Superopt.Tests.csproj" />
-  </Folder>
-</Solution>
