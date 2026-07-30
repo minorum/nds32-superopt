@@ -5,11 +5,26 @@ using Nds32.Superopt.Isa.Architecture;
 
 namespace Nds32.Superopt.Core.Search;
 
-public sealed class Superoptimizer(
-    CandidateEnumerator candidates,
-    ISequenceCostModel costModel,
-    IEquivalenceVerifier verifier)
+public sealed class Superoptimizer
 {
+    private readonly CandidateEnumerator _candidates;
+    private readonly ISequenceCostModel _costModel;
+    private readonly IEquivalenceVerifier _verifier;
+
+    public Superoptimizer(
+        CandidateEnumerator candidates,
+        ISequenceCostModel costModel,
+        IEquivalenceVerifier verifier)
+    {
+        ArgumentNullException.ThrowIfNull(candidates);
+        ArgumentNullException.ThrowIfNull(costModel);
+        ArgumentNullException.ThrowIfNull(verifier);
+
+        _candidates = candidates;
+        _costModel = costModel;
+        _verifier = verifier;
+    }
+
     public RewriteCandidate? FindCheapestReplacement(
         InstructionSequence source,
         Register destination,
@@ -22,14 +37,14 @@ public sealed class Superoptimizer(
             .OrderBy(static register => register.Index)
             .ToArray();
 
-        SequenceCost sourceCost = costModel.GetCost(source);
+        SequenceCost sourceCost = _costModel.GetCost(source);
         RewriteCandidate? best = null;
 
-        foreach (InstructionSequence candidate in candidates
+        foreach (InstructionSequence candidate in _candidates
                      .EnumerateSingleInstructionCandidates(destination, inputs)
                      .Distinct())
         {
-            SequenceCost candidateCost = costModel.GetCost(candidate);
+            SequenceCost candidateCost = _costModel.GetCost(candidate);
             if (candidateCost.CompareTo(sourceCost) >= 0)
             {
                 continue;
@@ -40,7 +55,7 @@ public sealed class Superoptimizer(
                 continue;
             }
 
-            VerificationResult result = verifier.Verify(source, candidate);
+            VerificationResult result = _verifier.Verify(source, candidate);
             if (result is VerificationResult.Counterexample)
             {
                 continue;
