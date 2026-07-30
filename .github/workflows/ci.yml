@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet restore Nds32.Superopt.slnx
+      - run: dotnet build Nds32.Superopt.slnx -c Release --no-restore
+      - run: dotnet test Nds32.Superopt.slnx -c Release --no-build
+
+  native-aot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: >-
+          dotnet publish src/Nds32.Superopt.Cli/Nds32.Superopt.Cli.csproj
+          -c Release
+          -r linux-x64
+          --self-contained
+          -o artifacts/linux-x64
+      - run: ./artifacts/linux-x64/nds32-superopt demo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nds32-superopt-linux-x64
+          path: artifacts/linux-x64/

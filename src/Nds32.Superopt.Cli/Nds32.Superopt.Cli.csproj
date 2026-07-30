@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>nds32-superopt</AssemblyName>
+    <RootNamespace>Nds32.Superopt.Cli</RootNamespace>
+    <PublishAot>true</PublishAot>
+    <SelfContained>true</SelfContained>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
+    <StripSymbols>true</StripSymbols>
+    <DebuggerSupport>false</DebuggerSupport>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Nds32.Superopt.Core/Nds32.Superopt.Core.csproj" />
+    <ProjectReference Include="../Nds32.Superopt.Isa/Nds32.Superopt.Isa.csproj" />
+  </ItemGroup>
+</Project>

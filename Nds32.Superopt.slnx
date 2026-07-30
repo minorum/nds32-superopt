@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Nds32.Superopt.Isa/Nds32.Superopt.Isa.csproj" />
+    <Project Path="src/Nds32.Superopt.Core/Nds32.Superopt.Core.csproj" />
+    <Project Path="src/Nds32.Superopt.Cli/Nds32.Superopt.Cli.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Nds32.Superopt.Tests/Nds32.Superopt.Tests.csproj" />
+  </Folder>
+</Solution>
