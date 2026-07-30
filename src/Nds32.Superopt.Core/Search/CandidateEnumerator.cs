@@ -21,6 +21,20 @@ public sealed class CandidateEnumerator
         Opcode.Add45,
     ];
 
+    private static readonly Opcode[] ImmediateBitOpcodes =
+    [
+        Opcode.AndImmediate,
+        Opcode.OrImmediate,
+        Opcode.XorImmediate,
+    ];
+
+    private static readonly Opcode[] ShiftOpcodes =
+    [
+        Opcode.ShiftLeft,
+        Opcode.ShiftRightLogical,
+        Opcode.ShiftRightArithmetic,
+    ];
+
     /// <summary>
     /// Enumerates single-instruction candidates plus the empty sequence. The caller
     /// remains responsible for equivalence verification and cost comparison.
@@ -62,12 +76,7 @@ public sealed class CandidateEnumerator
 
             foreach (int immediate in MaskImmediates)
             {
-                foreach (Opcode opcode in new[]
-                         {
-                             Opcode.AndImmediate,
-                             Opcode.OrImmediate,
-                             Opcode.XorImmediate,
-                         })
+                foreach (Opcode opcode in ImmediateBitOpcodes)
                 {
                     foreach (InstructionSequence sequence in TryBuild(
                                  Instruction.WithImmediate(opcode, destination, source, immediate)))
@@ -79,12 +88,7 @@ public sealed class CandidateEnumerator
 
             for (int shift = 0; shift <= 31; shift++)
             {
-                foreach (Opcode opcode in new[]
-                         {
-                             Opcode.ShiftLeft,
-                             Opcode.ShiftRightLogical,
-                             Opcode.ShiftRightArithmetic,
-                         })
+                foreach (Opcode opcode in ShiftOpcodes)
                 {
                     yield return new InstructionSequence(
                     [
