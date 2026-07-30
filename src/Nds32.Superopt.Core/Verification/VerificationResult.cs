@@ -11,8 +11,21 @@ public abstract record VerificationResult
     /// <summary>The verifier found no failing input, but did not prove equivalence.</summary>
     public sealed record NoCounterexample(int CasesChecked) : VerificationResult;
 
-    /// <summary>A future formal verifier may return this only after a complete proof.</summary>
-    public sealed record ProvenEquivalent(string ProofMethod) : VerificationResult;
+    /// <summary>
+    /// A complete verifier may return this only after producing a formal proof. The
+    /// constructor is internal so external verifier implementations cannot forge proof
+    /// status merely by returning the expected runtime type.
+    /// </summary>
+    public sealed record ProvenEquivalent : VerificationResult
+    {
+        internal ProvenEquivalent(string proofMethod)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(proofMethod);
+            ProofMethod = proofMethod;
+        }
+
+        public string ProofMethod { get; }
+    }
 
     public sealed record Counterexample(
         int CaseIndex,
