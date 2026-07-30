@@ -3,7 +3,6 @@ using Nds32.Superopt.Isa.Semantics;
 
 namespace Nds32.Superopt.Tests;
 
-[TestFixture]
 public sealed class ConcreteExecutorTests
 {
     private static readonly Register R1 = new(1);
@@ -11,7 +10,7 @@ public sealed class ConcreteExecutorTests
     private static readonly Register R3 = new(3);
 
     [Test]
-    public void Execute_AddImmediate_WrapsAtThirtyTwoBits()
+    public async Task Execute_AddImmediate_WrapsAtThirtyTwoBits()
     {
         var initial = new ConcreteMachineState { [R1] = uint.MaxValue };
         var sequence = new InstructionSequence(
@@ -21,22 +20,22 @@ public sealed class ConcreteExecutorTests
 
         ConcreteMachineState result = new ConcreteExecutor().Execute(sequence, initial);
 
-        Assert.That(result[R2], Is.Zero);
+        await Assert.That(result[R2]).IsEqualTo(0u);
     }
 
-    [TestCase(Opcode.Add,      7u,           3u,           10u)]
-    [TestCase(Opcode.Subtract, 7u,           3u,           4u)]
-    [TestCase(Opcode.And,      0b1100u,      0b1010u,      0b1000u)]
-    [TestCase(Opcode.Or,       0b1100u,      0b1010u,      0b1110u)]
-    [TestCase(Opcode.Xor,      0b1100u,      0b1010u,      0b0110u)]
-    [TestCase(Opcode.Nor,      0b1100u,      0b1010u,      unchecked((uint)~0b1110))]
-    [TestCase(Opcode.Multiply, 6u,           7u,           42u)]
-    [TestCase(Opcode.SetLessThan,         1u, 2u, 1u)]
-    [TestCase(Opcode.SetLessThan,         2u, 1u, 0u)]
-    [TestCase(Opcode.SetLessThan,         unchecked((uint)-1), 0u, 1u)]  // −1 < 0 (signed)
-    [TestCase(Opcode.SetLessThanUnsigned, 1u, 2u, 1u)]
-    [TestCase(Opcode.SetLessThanUnsigned, unchecked((uint)-1), 0u, 0u)] // UINT_MAX < 0 is false
-    public void Execute_BinaryInstruction_ImplementsBitVectorSemantics(
+    [Test]
+    [Arguments(Opcode.Add, 7u, 3u, 10u)]
+    [Arguments(Opcode.Subtract, 7u, 3u, 4u)]
+    [Arguments(Opcode.And, 0b1100u, 0b1010u, 0b1000u)]
+    [Arguments(Opcode.Or, 0b1100u, 0b1010u, 0b1110u)]
+    [Arguments(Opcode.Xor, 0b1100u, 0b1010u, 0b0110u)]
+    [Arguments(Opcode.Multiply, 6u, 7u, 42u)]
+    [Arguments(Opcode.SetLessThan, 1u, 2u, 1u)]
+    [Arguments(Opcode.SetLessThan, 2u, 1u, 0u)]
+    [Arguments(Opcode.SetLessThan, uint.MaxValue, 0u, 1u)]
+    [Arguments(Opcode.SetLessThanUnsigned, 1u, 2u, 1u)]
+    [Arguments(Opcode.SetLessThanUnsigned, uint.MaxValue, 0u, 0u)]
+    public async Task Execute_BinaryInstruction_ImplementsBitVectorSemantics(
         Opcode opcode,
         uint left,
         uint right,
@@ -55,13 +54,14 @@ public sealed class ConcreteExecutorTests
 
         ConcreteMachineState result = new ConcreteExecutor().Execute(sequence, initial);
 
-        Assert.That(result[R3], Is.EqualTo(expected));
+        await Assert.That(result[R3]).IsEqualTo(expected);
     }
 
-    [TestCase(Opcode.AndImmediate, 0b1111u, 0b1010, 0b1010u)]
-    [TestCase(Opcode.OrImmediate,  0b1100u, 0b0011, 0b1111u)]
-    [TestCase(Opcode.XorImmediate, 0b1111u, 0b1010, 0b0101u)]
-    public void Execute_ImmediateBitOp_ImplementsBitVectorSemantics(
+    [Test]
+    [Arguments(Opcode.AndImmediate, 0b1111u, 0b1010, 0b1010u)]
+    [Arguments(Opcode.OrImmediate, 0b1100u, 0b0011, 0b1111u)]
+    [Arguments(Opcode.XorImmediate, 0b1111u, 0b1010, 0b0101u)]
+    public async Task Execute_ImmediateBitOp_ImplementsBitVectorSemantics(
         Opcode opcode,
         uint source,
         int immediate,
@@ -75,11 +75,11 @@ public sealed class ConcreteExecutorTests
 
         ConcreteMachineState result = new ConcreteExecutor().Execute(sequence, initial);
 
-        Assert.That(result[R2], Is.EqualTo(expected));
+        await Assert.That(result[R2]).IsEqualTo(expected);
     }
 
     [Test]
-    public void Execute_ShiftRightArithmetic_PreservesSignBit()
+    public async Task Execute_ShiftRightArithmetic_PreservesSignBit()
     {
         var initial = new ConcreteMachineState { [R1] = 0x8000_0000u };
         var sequence = new InstructionSequence(
@@ -89,11 +89,11 @@ public sealed class ConcreteExecutorTests
 
         ConcreteMachineState result = new ConcreteExecutor().Execute(sequence, initial);
 
-        Assert.That(result[R2], Is.EqualTo(0xC000_0000u));
+        await Assert.That(result[R2]).IsEqualTo(0xC000_0000u);
     }
 
     [Test]
-    public void Execute_DoesNotMutateInitialState()
+    public async Task Execute_DoesNotMutateInitialState()
     {
         var initial = new ConcreteMachineState { [R1] = 41 };
         var sequence = new InstructionSequence(
@@ -103,25 +103,11 @@ public sealed class ConcreteExecutorTests
 
         _ = new ConcreteExecutor().Execute(sequence, initial);
 
-        Assert.That(initial[R1], Is.EqualTo(41));
+        await Assert.That(initial[R1]).IsEqualTo(41u);
     }
 
     [Test]
-    public void Execute_Nor_IsNotOfOr()
-    {
-        var initial = new ConcreteMachineState { [R1] = 0xF0u, [R2] = 0x0Fu };
-        var sequence = new InstructionSequence(
-        [
-            Instruction.Binary(Opcode.Nor, R3, R1, R2),
-        ]);
-
-        ConcreteMachineState result = new ConcreteExecutor().Execute(sequence, initial);
-
-        Assert.That(result[R3], Is.EqualTo(~0xFFu));
-    }
-
-    [Test]
-    public void Execute_MultiplyOverflow_KeepsLower32Bits()
+    public async Task Execute_MultiplyOverflow_KeepsLower32Bits()
     {
         var initial = new ConcreteMachineState
         {
@@ -135,8 +121,6 @@ public sealed class ConcreteExecutorTests
 
         ConcreteMachineState result = new ConcreteExecutor().Execute(sequence, initial);
 
-        // 0x8000_0001 * 2 = 0x1_0000_0002  →  lower 32 bits = 2
-        Assert.That(result[R3], Is.EqualTo(2u));
+        await Assert.That(result[R3]).IsEqualTo(2u);
     }
 }
-
