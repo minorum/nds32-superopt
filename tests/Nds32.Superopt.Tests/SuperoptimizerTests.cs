@@ -21,7 +21,7 @@ public sealed class SuperoptimizerTests
         RewriteCandidate? result = CreateOptimizer().FindCheapestReplacement(source, r2);
 
         await Assert.That(result).IsNotNull();
-        RewriteCandidate rewrite = result!.Value;
+        RewriteCandidate rewrite = result!;
 
         using (Assert.Multiple())
         {
@@ -45,7 +45,7 @@ public sealed class SuperoptimizerTests
         RewriteCandidate? result = CreateOptimizer().FindCheapestReplacement(source, r2);
 
         await Assert.That(result).IsNotNull();
-        RewriteCandidate rewrite = result!.Value;
+        RewriteCandidate rewrite = result!;
 
         using (Assert.Multiple())
         {
