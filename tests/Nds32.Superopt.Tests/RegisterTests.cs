@@ -36,7 +36,8 @@ public sealed class RegisterTests
         byte[] actual = mask.Enumerate()
             .Select(static register => register.Index)
             .ToArray();
+        byte[] expected = [1, 7, 19];
 
-        await Assert.That(actual.SequenceEqual([1, 7, 19])).IsTrue();
+        await Assert.That(actual.SequenceEqual(expected)).IsTrue();
     }
 }
